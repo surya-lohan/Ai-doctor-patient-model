@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String         @id @db.Uuid
+  email         String         @unique
+  name          String?
+  specialty     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  title       String?
+  patientInfo Json?     // Stores patient demographic info like age, gender, etc.
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id])
+  messages    Message[]
+  summary     String?   // Final diagnosis summary
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  role           String       // 'user' (doctor) or 'assistant' (patient)
+  createdAt      DateTime     @default(now())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
